@@ -1,0 +1,61 @@
+version: '2'
+services:
+        db1:
+          image: perconalab/percona-xtradb-cluster:latest
+          container_name: db1
+          privileged: true
+          environment:
+            MYSQL_ROOT_PASSWORD: 123456
+            CLUSTER_NAME: pxc
+          networks:
+            - pxc-net
+          ports:
+            - "3306:3306"
+          volumes:
+            - ./data/v1:/var/lib/mysql
+        db2:
+          container_name: db2
+          image: perconalab/percona-xtradb-cluster:latest
+          privileged: true
+          environment:
+            MYSQL_ROOT_PASSWORD: 123456
+            CLUSTER_NAME: pxc
+            CLUSTER_JOIN: db1
+          networks:
+            pxc-net:
+          ports:
+            - "3307:3306"
+          volumes:
+            - ./data/v2:/var/lib/mysql
+          depends_on:
+            - db1
+        db3:
+          container_name: db3
+          privileged: true
+          image: perconalab/percona-xtradb-cluster:latest
+          environment:
+            MYSQL_ROOT_PASSWORD: 123456
+            CLUSTER_NAME: pxc
+            CLUSTER_JOIN: db1
+          networks:
+            - pxc-net
+          ports:
+            - "3308:3306"
+          volumes:
+            - ./data/v3:/var/lib/mysql
+          depends_on:
+            - db1
+        ha1:
+          container_name: ha1
+          privileged: true
+          image: haproxy:latest
+          networks:
+            - pxc-net
+          ports:
+            - "6033:3306"
+            - "8888:8888"
+          volumes:
+            - ./haproxy-mysql.cfg:/usr/local/etc/haproxy/haproxy.cfg
+networks:
+        pxc-net:
+            driver: bridge
